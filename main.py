@@ -8,6 +8,13 @@ def csv_type(arg_value):
     return arg_value
 
 parser = argparse.ArgumentParser(description='Подсчет ЗП')
-parser.add_argument('csv_file', type=csv_type, nargs='+', help='bar help')
+parser.add_argument('csv_file', type=csv_type, nargs='+', help='name of csv_file')
+parser.add_argument('--report', type=str, default='payout', help='name of report')
 args = parser.parse_args()
-print(args)
+
+spisok = []
+for i in args.csv_file:
+    with open(i, 'r', encoding='utf-8') as file1:
+        spisok += file1.readlines()
+
+print(spisok)
