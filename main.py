@@ -2,9 +2,9 @@ import argparse
 import re
 
 def csv_type(arg_value):
-    pat=re.compile(r"\w+\.csv$")
+    pat=re.compile(r".+\.csv$")
     if not pat.match(arg_value):
-        raise argparse.ArgumentTypeError("invalid value")
+        raise argparse.ArgumentTypeError("Please input correct csv")
     return arg_value
 
 parser = argparse.ArgumentParser(description='Подсчет ЗП')
@@ -12,9 +12,47 @@ parser.add_argument('csv_file', type=csv_type, nargs='+', help='name of csv_file
 parser.add_argument('--report', type=str, default='payout', help='name of report')
 args = parser.parse_args()
 
-spisok = []
-for i in args.csv_file:
-    with open(i, 'r', encoding='utf-8') as file1:
-        spisok += file1.readlines()
+employees = []
+for file in args.csv_file:
+    with open(file, 'r', encoding='utf-8') as file1:
+        columns = file1.readline().rstrip('\n').split(',')
+        rows = file1.readlines()
+        for row in rows:
+            employees.append(dict(zip(columns, row.rstrip('\n').split(','))))
+    
+for emp in employees:
+    if 'hourly_rate' in emp:
+        emp['rate'] = emp.pop('hourly_rate')
+    if 'salary' in emp:
+        emp['rate'] = emp.pop('salary')
+        
 
-print(spisok)
+def payout(data):
+    departments = {}
+    for employee in data:
+        departments.setdefault(employee['department'], []).append((employee['name'], employee['hours_worked'], employee['rate']))
+
+    print(' ' * 15 + 'name' + ' ' * 16 + 'hours   rate    payout' )
+    for k in sorted(departments):
+        print(k)
+        hours = 0
+        payout = 0
+        for emp in departments[k]:
+            print('-' * 15 + emp[0] + ' ' * (20 - len(emp[0])) + emp[1] + ' ' * (8 - len(emp[1])) + emp[2] +
+                  ' ' * (8 - len(emp[2])) + '$' + str(int(emp[1]) * int(emp[2])))
+            hours += int(emp[1])
+            payout += (int(emp[1]) * int(emp[2]))
+        print(' ' * 35 + str(hours) + ' ' * (16 - len(str(hours))) + '$' + str(payout))
+
+def salary(data):
+    print('report salary')
+
+reports = {'payout', 'salary'}
+if args.report not in reports:
+    print('Please enter correct report name')
+else:
+    eval(args.report)(employees)
+
+
+
+
